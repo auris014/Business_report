@@ -1,0 +1,293 @@
+---
+title: "Animal_outcomes"
+author: "Aura Zuluaga"
+date: "11/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(skimr)
+library(ggplot2)
+library(knitr)
+library(dplyr)
+theme_light()
+```
+
+Structure of the report:
+1.	Executive summary
+2.	Introduction/Background (maximum 100 words)
+3.	Research objective (main objective &/or sub-objectives) & questions.
+
+## Possible Objectives:
+
+### Reduce the euthanise levels per state territory
+### Increase the percentage of adoption in animals per state
+
+4.	Review information
+
+5.	Analysis and evaluate
+
+```{r}
+animal_outcomes <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-21/animal_outcomes.csv')
+clean_names(animal_outcomes)
+animal_outcomes$animal_type<-as.factor(animal_outcomes$animal_type)
+animal_outcomes$outcome<-as.factor(animal_outcomes$outcome)
+animal_outcomes$year<-as.numeric(animal_outcomes$year)
+animal_outcomes[is.na(animal_outcomes)] = 0
+skim(animal_outcomes)
+```
+
+# 1. How many animals have been released/rehomed/euthanised/currently_in_care from 1999 to 2018 in Australia? How the outcomes' percentage levels have changed in dogs,cats and wildlife ? 
+
+###COMPARISON ANIMAL OUTCOMES 
+
+```{r}
+table1<-animal_outcomes%>%count(year,outcome, sort=TRUE, wt=Total)%>%
+    mutate(outcome=fct_lump(outcome, 7),
+           outcome=fct_reorder(outcome, -n, sum)) 
+           kable(table1)
+table1%>%ggplot(aes(year, n,color=outcome)) +
+    geom_line() +
+labs(
+    x = "Year",
+    y = "Number of Animals",
+    title="Comparison of outcomes of all animals through time",
+    fill = NULL)+
+    facet_wrap(~outcome,scales="free_y")
+```
+
+###COMPARISON OUTCOMES DOGS
+
+```{r}
+dogs1<-animal_outcomes%>%
+filter(animal_type=="Dogs")%>%
+count(year,animal_type, outcome, wt=Total)%>%
+mutate(outcome=fct_lump(outcome, 4),
+           outcome=fct_reorder(outcome, n, sum)) 
+kable(dogs1)
+
+dogs1%>%ggplot(aes(year, n, fill= outcome)) +
+  geom_bar(position = "fill", stat = "identity",colour = "black")+
+scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_brewer(palette="Pastel1")+
+labs(
+    x = "Year",
+    y = "Percentage of Dogs",
+    title="Comparison of outcomes of dogs through time",
+    fill = NULL)
+```
+
+
+###COMPARISON OUTCOMES CATS
+
+```{r}
+cats1<-animal_outcomes%>%
+filter(animal_type=="Cats")%>%
+count(year,animal_type, outcome, wt=Total)%>%
+mutate(outcome=fct_lump(outcome, 4),
+           outcome=fct_reorder(outcome, n, sum)) 
+kable(cats1)
+
+cats1%>%ggplot(aes(year, n, fill= outcome)) +
+  geom_bar(position = "fill", stat = "identity",colour = "black")+
+scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_brewer(palette="Pastel1")+
+labs(
+    x = "Year",
+    y = "Percentage of Cats",
+    title="Comparison of outcomes of cats through time",
+    fill = NULL)
+```
+
+
+###COMPARISON OUTCOMES WILDLIFE
+
+```{r}
+wild1<-animal_outcomes%>%
+filter(animal_type=="Wildlife")%>%
+count(year,animal_type, outcome, wt=Total)%>%
+mutate(outcome=fct_lump(outcome, 4),
+           outcome=fct_reorder(outcome, n, sum)) 
+kable(wild1)
+
+wild1%>%ggplot(aes(year, n, fill= outcome)) +
+  geom_bar(position = "fill", stat = "identity",colour = "black")+
+scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_brewer(palette="Pastel1")+
+labs(
+    x = "Year",
+    y = "Percentage of Cats",
+    title="Comparison of outcomes of wildlife through time",
+    fill = NULL)
+```
+
+# 2. Identify how the number of euthanized wildlife animals has changed during the last decade? Does it have a significant change through years?
+
+```{r}
+table2<-animal_outcomes%>%filter(animal_type=='Wildlife',outcome=='Euthanized')%>%
+count(year,animal_type,outcome,sort = TRUE,wt=Total)
+kable(table2)
+
+
+table2%>%ggplot(aes(year, n)) +
+  geom_line(colour="purple")+
+labs(
+    x = "Year",
+    y = "Number of Wildlife Euthanized",
+    title="Number of Wildlife Euthanized through time",
+    fill = NULL)
+```
+
+
+# 3. What regions of Australia euthanised more animals?
+
+```{r}
+euth3<-animal_outcomes%>%
+filter(outcome=="Euthanized")%>%
+pivot_longer(ACT:WA, names_to ="state", values_to="n")%>%
+group_by(year,state)%>%
+summarise(n =sum(n))
+kable(euth3)
+
+
+euth3%>%ggplot(aes(year, n,color=state)) +
+    geom_line() +
+labs(
+    x = "Year",
+    y = "Number of Euthanized Animals",
+    title="Comparison of numbers of euthanized animals by state through time",
+    fill = NULL)
+```
+
+
+# 4. What are the adoption levels per state territory?
+
+##NUMBER OF ANIMALS ADOPTED OR RECLAIMED BY STATE
+
+```{r}
+adopt4<-animal_outcomes%>%
+filter(outcome != "Other", outcome != "Euthanized", outcome != "Currently In Care", outcome != "Transferred", outcome != "Released", outcome != "In Stock")%>%
+pivot_longer(ACT:WA, names_to ="state", values_to="n")%>%
+group_by(year,state)%>%
+summarise(n =sum(n))
+kable(adopt4)
+
+
+adopt4%>%ggplot(aes(year, n,color=state)) +
+    geom_line() +
+labs(
+    x = "Year",
+    y = "Number of Adopted Animals",
+    title="Comparison of numbers of adopted animals by state through time",
+    fill = NULL)
+```
+
+##PERCENTAJE OF ANIMALS ADOPTED OR RECLAIMED BY STATE
+
+```{r}
+animals4<-animal_outcomes%>%
+pivot_longer(ACT:WA, names_to ="state", values_to="n")%>%
+group_by(year,state)%>%
+summarise(nt =sum(n))
+kable(animals4)
+
+
+merge4 <- merge(adopt4,animals4,by=c("year","state"))%>%
+mutate(animals4, p = (n/nt))
+kable(merge4)
+
+
+merge4%>%ggplot(aes(year, p, color= state)) +
+    geom_line() +
+scale_y_continuous(labels = scales::percent_format()) +
+labs(
+    x = "Year",
+    y = "% of animales adopted or reclaimed",
+    title="Percentage of animales adopted or reclaimed by state through time",
+    fill = NULL)+
+    facet_wrap(~state,scales="free_y")
+```
+
+##TOTAL OF ANIMALS THAT GO INTO DE SYSTEM PER STATE
+
+```{r}
+animals4%>%ggplot(aes(year, nt,color=state)) +
+    geom_line() +
+labs(
+    x = "Year",
+    y = "Number of Animals",
+    title="Total of animals that go into the system per state",
+    fill = NULL)
+```
+
+##ANIMALS ADOPTED IN THE COUNTRY
+
+```{r}
+country4<-animal_outcomes%>%
+filter(outcome != "Other", outcome != "Euthanized", outcome != "Currently In Care", outcome != "Transferred", outcome != "Released", outcome != "In Stock")%>%
+pivot_longer(ACT:WA, names_to ="state", values_to="n")%>%
+group_by(year)%>%
+summarise(n =sum(n))
+kable(country4)
+
+
+country4%>%ggplot(aes(year, n)) +
+    geom_line() +
+labs(
+    x = "Year",
+    y = "Number of Adopted Animals",
+    title="Comparison of numbers of adopted animals in the country through time",
+    fill = NULL)
+```
+##PERCENTAGE OF ANIMALS ADOPTED IN THE COUNTRY
+
+```{r}
+country4b<-animal_outcomes%>%
+pivot_longer(ACT:WA, names_to ="state", values_to="n")%>%
+group_by(year)%>%
+summarise(nt =sum(n))
+kable(country4b)
+
+
+merge4b <- merge(country4,country4b,by=c("year"))%>%
+mutate(country4, p = (n/nt))
+kable(merge4b)
+
+
+merge4b%>%ggplot(aes(year, p)) +
+    geom_line(colour="blue") +
+scale_y_continuous(labels = scales::percent_format()) +
+labs(
+    x = "Year",
+    y = "% of animales adopted or reclaimed",
+    title="Percentage of animales adopted or reclaimed in Australia through time",
+    fill = NULL)
+```
+
+
+# 5. WhaT type of animal is more likely to be adopted in Australia?
+
+```{r}
+
+```
+
+
+6.	Findings and discussion
+
+# Predict # of adoptions in the coming years. What are the more critical 
+# 5. Why are the levels of adoption lower in NSW than in other Australian states?
+
+7.	Recommendations
+8.	Limitations of this study
+
+
+9.	Conclusion
+10.	References
+
+ 
