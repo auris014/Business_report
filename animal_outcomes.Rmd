@@ -1,7 +1,7 @@
 ---
 title: "Animal_outcomes"
 author: "Aura Zuluaga"
-date: "11/06/2021"
+date: "12/06/2021"
 output: html_document
 ---
 
@@ -122,7 +122,7 @@ scale_y_continuous(labels = scales::percent_format()) +
   scale_fill_brewer(palette="Pastel1")+
 labs(
     x = "Year",
-    y = "Percentage of Cats",
+    y = "Percentage of Wildlife",
     title="Comparison of outcomes of wildlife through time",
     fill = NULL)
 ```
@@ -270,7 +270,8 @@ labs(
     title="Comparison of numbers of adopted animals in the country through time",
     fill = NULL)
 ```
-##PERCENTAGE OF ANIMALS ADOPTED IN THE COUNTRY
+
+## PERCENTAGE OF ANIMALS ADOPTED IN THE COUNTRY
 
 ```{r}
 country4b<-animal_outcomes%>%
@@ -299,6 +300,21 @@ labs(
 # 5. WhaT type of animal is more likely to be adopted in Australia?
 
 ```{r}
+table5<-animal_outcomes%>%filter(outcome=='Rehomed')%>%
+count(year,animal_type,outcome,wt=Total)%>%
+mutate(animal_type=fct_reorder(animal_type, n, sum)) 
+kable(table5)
+
+
+table5%>%ggplot(aes(year, n, fill= animal_type)) +
+  geom_bar(position = "fill", stat = "identity",colour = "black")+
+scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_brewer(palette="Pastel2")+
+labs(
+    x = "Year",
+    y = "Percentage of Animals Adopted",
+    title="Comparison of the percentage of animals adopted in Australia through time",
+    fill = NULL)
 
 ```
 
@@ -314,5 +330,3 @@ labs(
 
 9.	Conclusion
 10.	References
-
- 
